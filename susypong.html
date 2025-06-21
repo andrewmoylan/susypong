@@ -30,6 +30,8 @@
         const heartSize = 10; // General size for hearts, used for drawing and collision
         let balls = []; // Array to hold multiple ball objects
         const maxBalls = 50;
+        const trailParticleLifetime = 60; // How many frames a trail particle lasts
+        const maxTrailParticlesPerBall = 20; // Max trail particles for one ball
 
         // Game state
         // let gameOver = false; // Removed: game no longer ends
@@ -55,11 +57,11 @@
             context.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
         }
 
-        // Draw a heart shape centered at ball.x, ball.y
-        function drawHeartShape(ball) {
-            const cx = ball.x;
-            const cy = ball.y;
-            const size = heartSize; // Use heartSize as the basis for width/height
+        // Draw a heart shape centered at cx, cy with a given visualSize and fillStyle
+        function drawHeartShape(cx, cy, visualSize, fillStyle) {
+            // const cx = ball.x; // No longer from ball object directly
+            // const cy = ball.y; // No longer from ball object directly
+            const size = visualSize; // Use passed visualSize
             
             // Define heart dimensions based on 'size'
             // Heart width will be 'size * 2', height 'size * 1.8'
@@ -67,7 +69,7 @@
             const width = size * 2;
             const height = size * 1.8;
 
-            context.fillStyle = ball.color || 'pink'; // Use ball's color or default to pink
+            context.fillStyle = fillStyle; // Use passed fillStyle
 
             context.save(); // Save current context state (like fillStyle, transformations)
             context.translate(cx, cy); // Move canvas origin to the heart's center point
@@ -90,6 +92,30 @@
             context.restore(); // Restore canvas context to its state before save()
         }
 
+        function getRainbowColor(hue, alpha) {
+            const saturation = 1; // 100%
+            const lightness = 0.5; // 50%
+
+            // HSL to RGB conversion
+            const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
+            const x_hsl = c * (1 - Math.abs((hue / 60) % 2 - 1)); // Renamed x to x_hsl to avoid conflict
+            const m = lightness - c / 2;
+            let r = 0, g = 0, b = 0;
+
+            if (0 <= hue && hue < 60) { r = c; g = x_hsl; b = 0; }
+            else if (60 <= hue && hue < 120) { r = x_hsl; g = c; b = 0; }
+            else if (120 <= hue && hue < 180) { r = 0; g = c; b = x_hsl; }
+            else if (180 <= hue && hue < 240) { r = 0; g = x_hsl; b = c; }
+            else if (240 <= hue && hue < 300) { r = x_hsl; g = 0; b = c; }
+            else if (300 <= hue && hue < 360) { r = c; g = 0; b = x_hsl; }
+
+            r = Math.round((r + m) * 255);
+            g = Math.round((g + m) * 255);
+            b = Math.round((b + m) * 255);
+
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
         function drawScore() {
             context.font = '16px Arial';
             context.fillStyle = 'black';
@@ -103,14 +129,16 @@
                 y: canvas.height / 3,
                 speedX: 3,
                 speedY: -3,
-                color: 'hotpink' // First heart color
+                hue: 0, // Start with red
+                trail: []
             });
             balls.push({
                 x: (canvas.width * 2) / 3, // Start second ball on right side
                 y: canvas.height / 3,
                 speedX: -3,
                 speedY: -2.5, // Slightly different speed for variety
-                color: 'deeppink' // Second heart color
+                hue: 120, // Start with green
+                trail: []
             });
         }
 
@@ -119,6 +147,27 @@
 
             for (let i = 0; i < balls.length; i++) {
                 let ball = balls[i];
+
+                // Add a new trail particle at the current ball position
+                const particle = {
+                    x: ball.x,
+                    y: ball.y,
+                    hue: ball.hue, // Use the ball's current hue for this particle
+                    life: trailParticleLifetime
+                };
+                ball.trail.push(particle);
+
+                // Increment ball's hue for the *next* particle/main heart color
+                ball.hue = (ball.hue + 2) % 360; // Slower change for smoother rainbow on main heart
+
+                // Keep trail length manageable
+                if (ball.trail.length > maxTrailParticlesPerBall) {
+                    ball.trail.shift(); // Remove the oldest particle
+                }
+
+                // Update life of existing trail particles and filter out dead ones
+                ball.trail.forEach(p => p.life--);
+                ball.trail = ball.trail.filter(p => p.life > 0);
 
                 // Move ball
                 ball.x += ball.speedX;
@@ -173,7 +222,8 @@
                                 y: ball.y, // Start at the same position
                                 speedX: originalSpeedX * 0.8 - 0.5, // Slightly different angle/speed
                                 speedY: ball.speedY, // Same vertical speed (bounced)
-                                color: ball.color // Same color
+                                hue: (ball.hue + 30) % 360, // Offset hue for variety
+                                trail: []
                             };
                             balls.push(newBall);
 
@@ -186,16 +236,32 @@
         }
 
         function draw() {
-            // Clear canvas
-            context.clearRect(0, 0, canvas.width, canvas.height);
+            // Fading effect: draw a semi-transparent white rectangle over the canvas
+            context.fillStyle = 'rgba(255, 255, 255, 0.15)'; // Adjust alpha for trail length/fade speed
+            context.fillRect(0, 0, canvas.width, canvas.height);
 
             // No longer checking for gameOver to display a message
 
             drawPaddle();
-            // Draw all balls (hearts)
+
+            // Draw all trails then all balls (hearts)
             for (let i = 0; i < balls.length; i++) {
-                drawHeartShape(balls[i]);
+                const ball = balls[i];
+                // Draw trail particles
+                for (const particle of ball.trail) {
+                    const alpha = Math.max(0, particle.life / trailParticleLifetime); // Ensure alpha is not negative
+                    const trailColor = getRainbowColor(particle.hue, alpha * 0.8); // Trail particles slightly more transparent
+                    drawHeartShape(particle.x, particle.y, heartSize * 0.6, trailColor); // Smaller hearts for trail
+                }
             }
+            
+            // Draw main balls (hearts) on top of trails
+            for (let i = 0; i < balls.length; i++) {
+                const ball = balls[i];
+                const mainHeartColor = getRainbowColor(ball.hue, 1.0); // Main heart is fully opaque
+                drawHeartShape(ball.x, ball.y, heartSize, mainHeartColor);
+            }
+
             drawScore();
         }
 
