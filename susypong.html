@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Susy Pong</title>
+    <style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0; }
+        canvas { border: 1px solid black; background-color: #fff; }
+    </style>
+</head>
+<body>
+    <canvas id="pongCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const context = canvas.getContext('2d');
+
+        // Game dimensions
+        canvas.width = 600;
+        canvas.height = 400;
+
+        // Paddle
+        const paddleWidth = 100;
+        const paddleHeight = 10;
+        let paddleX = (canvas.width - paddleWidth) / 2;
+        const paddleY = canvas.height - paddleHeight - 10; // 10px from bottom
+
+        // Ball
+        let ballX = canvas.width / 2;
+        let ballY = canvas.height / 2;
+        let ballRadius = 7;
+        let ballSpeedX = 4;
+        let ballSpeedY = -4; // Start moving upwards
+
+        // Game state
+        let gameOver = false;
+        let score = 0;
+
+        document.addEventListener('mousemove', movePaddle);
+
+        function movePaddle(event) {
+            const rect = canvas.getBoundingClientRect();
+            paddleX = event.clientX - rect.left - paddleWidth / 2;
+
+            // Keep paddle within canvas bounds
+            if (paddleX < 0) {
+                paddleX = 0;
+            }
+            if (paddleX + paddleWidth > canvas.width) {
+                paddleX = canvas.width - paddleWidth;
+            }
+        }
+
+        function drawPaddle() {
+            context.fillStyle = 'blue';
+            context.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
+        }
+
+        function drawBall() {
+            context.beginPath();
+            context.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            context.fillStyle = 'red';
+            context.fill();
+            context.closePath();
+        }
+
+        function drawScore() {
+            context.font = '16px Arial';
+            context.fillStyle = 'black';
+            context.fillText('Score: ' + score, 8, 20);
+        }
+        
+        function resetBall() {
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            ballSpeedX = 4 * (Math.random() > 0.5 ? 1 : -1); // Randomize initial horizontal direction
+            ballSpeedY = -4; // Start moving upwards
+        }
+
+        function update() {
+            if (gameOver) {
+                context.font = '30px Arial';
+                context.fillStyle = 'black';
+                context.textAlign = 'center';
+                context.fillText('Game Over! Score: ' + score, canvas.width / 2, canvas.height / 2);
+                context.font = '16px Arial';
+                context.fillText('Click to Restart', canvas.width / 2, canvas.height / 2 + 30);
+                return;
+            }
+
+            // Move ball
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Wall collision (left/right)
+            if (ballX + ballRadius > canvas.width || ballX - ballRadius < 0) {
+                ballSpeedX = -ballSpeedX;
+            }
+
+            // Wall collision (top)
+            if (ballY - ballRadius < 0) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            // Paddle collision
+            if (ballY + ballRadius > paddleY && 
+                ballY - ballRadius < paddleY + paddleHeight &&
+                ballX + ballRadius > paddleX && 
+                ballX - ballRadius < paddleX + paddleWidth) {
+                ballSpeedY = -ballSpeedY;
+                // Optional: Add slight angle change based on where it hits the paddle
+                let deltaX = ballX - (paddleX + paddleWidth / 2);
+                ballSpeedX = deltaX * 0.2; // Adjust this factor for more/less effect
+                score++;
+            }
+
+            // Ball misses paddle (bottom wall)
+            if (ballY + ballRadius > canvas.height) {
+                gameOver = true;
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameOver) {
+                update(); // To display game over message
+                return;
+            }
+
+            drawPaddle();
+            drawBall();
+            drawScore();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        canvas.addEventListener('click', () => {
+            if (gameOver) {
+                gameOver = false;
+                score = 0;
+                resetBall();
+            }
+        });
+
+        resetBall(); // Initialize ball position and speed
+        gameLoop();
+    </script>
+</body>
+</html>
