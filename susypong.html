@@ -29,6 +29,7 @@
         // Ball
         const heartSize = 10; // General size for hearts, used for drawing and collision
         let balls = []; // Array to hold multiple ball objects
+        const maxBalls = 50;
 
         // Game state
         // let gameOver = false; // Removed: game no longer ends
@@ -158,10 +159,27 @@
                         ball.speedY = -ball.speedY;
                         ball.y = paddleY - heartSize; // Place ball just above paddle to prevent sticking
 
-                        // Optional: Change horizontal speed based on where it hits the paddle
+                        // Original ball's horizontal speed adjustment
                         let deltaX = ball.x - (paddleX + paddleWidth / 2);
-                        ball.speedX = deltaX * 0.2; 
+                        let originalSpeedX = deltaX * 0.2;
+                        ball.speedX = originalSpeedX;
+                        
                         score++;
+
+                        // Duplicate ball if under maxBalls limit
+                        if (balls.length < maxBalls) {
+                            const newBall = {
+                                x: ball.x,
+                                y: ball.y, // Start at the same position
+                                speedX: originalSpeedX * 0.8 - 0.5, // Slightly different angle/speed
+                                speedY: ball.speedY, // Same vertical speed (bounced)
+                                color: ball.color // Same color
+                            };
+                            balls.push(newBall);
+
+                            // Adjust original ball's speed slightly as well
+                            ball.speedX = originalSpeedX * 1.2 + 0.5;
+                        }
                     }
                 }
             }
