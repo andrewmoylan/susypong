@@ -114,45 +114,56 @@
         }
 
         function update() {
-            // if (gameOver) { // Removed: game no longer ends, this block is gone
-                context.font = '30px Arial';
-                context.fillStyle = 'black';
-                context.textAlign = 'center';
-                context.fillText('Game Over! Score: ' + score, canvas.width / 2, canvas.height / 2);
-                context.font = '16px Arial';
-                context.fillText('Click to Restart', canvas.width / 2, canvas.height / 2 + 30);
-                return;
-            }
+            // Removed gameOver check, game runs continuously
 
-            // Move ball
-            ballX += ballSpeedX;
-            ballY += ballSpeedY;
+            for (let i = 0; i < balls.length; i++) {
+                let ball = balls[i];
 
-            // Wall collision (left/right)
-            if (ballX + ballRadius > canvas.width || ballX - ballRadius < 0) {
-                ballSpeedX = -ballSpeedX;
-            }
+                // Move ball
+                ball.x += ball.speedX;
+                ball.y += ball.speedY;
 
-            // Wall collision (top)
-            if (ballY - ballRadius < 0) {
-                ballSpeedY = -ballSpeedY;
-            }
+                // Wall collision (left/right)
+                // The heart's drawn width is heartSize*2. Collision uses heartSize (half-width).
+                // The heart's drawn height is heartSize*1.8. Collision uses heartSize*0.9 (half-height).
+                // For simplicity in a "minimal" game, we'll use heartSize for both X and Y collision checks,
+                // approximating a circular or square bounding box.
+                if (ball.x + heartSize > canvas.width) { // Right wall
+                    ball.speedX = -ball.speedX;
+                    ball.x = canvas.width - heartSize; // Adjust position to prevent sticking
+                } else if (ball.x - heartSize < 0) { // Left wall
+                    ball.speedX = -ball.speedX;
+                    ball.x = heartSize; // Adjust position
+                }
 
-            // Paddle collision
-            if (ballY + ballRadius > paddleY && 
-                ballY - ballRadius < paddleY + paddleHeight &&
-                ballX + ballRadius > paddleX && 
-                ballX - ballRadius < paddleX + paddleWidth) {
-                ballSpeedY = -ballSpeedY;
-                // Optional: Add slight angle change based on where it hits the paddle
-                let deltaX = ballX - (paddleX + paddleWidth / 2);
-                ballSpeedX = deltaX * 0.2; // Adjust this factor for more/less effect
-                score++;
-            }
+                // Wall collision (top/bottom)
+                if (ball.y - heartSize < 0) { // Top wall
+                    ball.speedY = -ball.speedY;
+                    ball.y = heartSize; // Adjust position
+                } else if (ball.y + heartSize > canvas.height) { // Bottom wall - now bounces
+                    ball.speedY = -ball.speedY;
+                    ball.y = canvas.height - heartSize; // Adjust position
+                    // No longer game over when hitting bottom wall
+                }
 
-            // Ball misses paddle (bottom wall)
-            if (ballY + ballRadius > canvas.height) {
-                gameOver = true;
+                // Paddle collision
+                // Using heartSize as effective radius for collision detection
+                if (ball.y + heartSize > paddleY && // Ball's bottom edge is below paddle's top edge
+                    ball.y - heartSize < paddleY + paddleHeight && // Ball's top edge is above paddle's bottom edge
+                    ball.x + heartSize > paddleX && // Ball's right edge is past paddle's left edge
+                    ball.x - heartSize < paddleX + paddleWidth) { // Ball's left edge is before paddle's right edge
+                    
+                    // Ensure ball is moving downwards and hits the top surface of the paddle
+                    if (ball.speedY > 0) { 
+                        ball.speedY = -ball.speedY;
+                        ball.y = paddleY - heartSize; // Place ball just above paddle to prevent sticking
+
+                        // Optional: Change horizontal speed based on where it hits the paddle
+                        let deltaX = ball.x - (paddleX + paddleWidth / 2);
+                        ball.speedX = deltaX * 0.2; 
+                        score++;
+                    }
+                }
             }
         }
 
@@ -160,13 +171,13 @@
             // Clear canvas
             context.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (gameOver) {
-                update(); // To display game over message
-                return;
-            }
+            // No longer checking for gameOver to display a message
 
             drawPaddle();
-            drawBall();
+            // Draw all balls (hearts)
+            for (let i = 0; i < balls.length; i++) {
+                drawHeartShape(balls[i]);
+            }
             drawScore();
         }
 
