@@ -27,14 +27,11 @@
         const paddleY = canvas.height - paddleHeight - 10; // 10px from bottom
 
         // Ball
-        let ballX = canvas.width / 2;
-        let ballY = canvas.height / 2;
-        let ballRadius = 7;
-        let ballSpeedX = 4;
-        let ballSpeedY = -4; // Start moving upwards
+        const heartSize = 10; // General size for hearts, used for drawing and collision
+        let balls = []; // Array to hold multiple ball objects
 
         // Game state
-        let gameOver = false;
+        // let gameOver = false; // Removed: game no longer ends
         let score = 0;
 
         document.addEventListener('mousemove', movePaddle);
@@ -57,12 +54,39 @@
             context.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
         }
 
-        function drawBall() {
+        // Draw a heart shape centered at ball.x, ball.y
+        function drawHeartShape(ball) {
+            const cx = ball.x;
+            const cy = ball.y;
+            const size = heartSize; // Use heartSize as the basis for width/height
+            
+            // Define heart dimensions based on 'size'
+            // Heart width will be 'size * 2', height 'size * 1.8'
+            // This means 'size' acts like a half-width for the heart.
+            const width = size * 2;
+            const height = size * 1.8;
+
+            context.fillStyle = ball.color || 'pink'; // Use ball's color or default to pink
+
+            context.save(); // Save current context state (like fillStyle, transformations)
+            context.translate(cx, cy); // Move canvas origin to the heart's center point
+
             context.beginPath();
-            context.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-            context.fillStyle = 'pink';
+            // Path is drawn relative to the new (cx,cy) origin.
+            // Start at the bottom tip of the heart.
+            context.moveTo(0, height / 2);
+            // Left side curves (Bezier curve to the start of the left lobe arc)
+            context.bezierCurveTo(-width / 20, height / 2.5, -width / 2, -height / 8, -width / 2, -height / 3.5);
+            // Left lobe (an arc)
+            context.arc(-width / 4, -height / 3.5, width / 4, Math.PI, 0, false);
+            // Right lobe (an arc)
+            context.arc(width / 4, -height / 3.5, width / 4, Math.PI, 0, false);
+            // Right side curves (Bezier curve from the end of the right lobe arc to the bottom tip)
+            context.bezierCurveTo(width / 2, -height / 8, width / 20, height / 2.5, 0, height / 2);
+            
             context.fill();
             context.closePath();
+            context.restore(); // Restore canvas context to its state before save()
         }
 
         function drawScore() {
@@ -71,15 +95,26 @@
             context.fillText('Score: ' + score, 8, 20);
         }
         
-        function resetBall() {
-            ballX = canvas.width / 2;
-            ballY = canvas.height / 2;
-            ballSpeedX = 4 * (Math.random() > 0.5 ? 1 : -1); // Randomize initial horizontal direction
-            ballSpeedY = -4; // Start moving upwards
+        function resetBalls() {
+            balls = []; // Clear existing balls
+            balls.push({
+                x: canvas.width / 3, // Start first ball on left side
+                y: canvas.height / 3,
+                speedX: 3,
+                speedY: -3,
+                color: 'hotpink' // First heart color
+            });
+            balls.push({
+                x: (canvas.width * 2) / 3, // Start second ball on right side
+                y: canvas.height / 3,
+                speedX: -3,
+                speedY: -2.5, // Slightly different speed for variety
+                color: 'deeppink' // Second heart color
+            });
         }
 
         function update() {
-            if (gameOver) {
+            // if (gameOver) { // Removed: game no longer ends, this block is gone
                 context.font = '30px Arial';
                 context.fillStyle = 'black';
                 context.textAlign = 'center';
@@ -141,15 +176,10 @@
             requestAnimationFrame(gameLoop);
         }
         
-        canvas.addEventListener('click', () => {
-            if (gameOver) {
-                gameOver = false;
-                score = 0;
-                resetBall();
-            }
-        });
+        // canvas.addEventListener('click', ...); // Removed: Game no longer has a 'game over' state,
+                                                 // so click-to-restart is not needed.
 
-        resetBall(); // Initialize ball position and speed
+        resetBalls(); // Initialize balls' positions and speeds
         gameLoop();
     </script>
 </body>
