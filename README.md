@@ -1,6 +1,6 @@
 # Susy Pong - Development Log
 
-This file documents the iterative development of `susypong.html`, a simple Pong-like game, based on a series of requests.
+This file documents the iterative development of `susypong.html`, a simple Pong-like game, based on a series of requests made to Aider/Gemini.
 
 ## Feature Requests
 
@@ -26,3 +26,11 @@ This file documents the iterative development of `susypong.html`, a simple Pong-
 5.  **Fading Rainbow Trails** (Commit: `7a5e464`)
     *   Request: "Can the hearts leave a fading rainbow trail behind them?"
     *   Implementation: Hearts now leave a trail of smaller, fading hearts behind them. Both the main hearts and their trails cycle through rainbow colors. A screen-clearing effect was modified to allow trails to fade gradually.
+
+6.  **README Creation** (Commit: `c6533c3`)
+    *   Request: "Add a README.md which has all the requests I have made from you so far, so people can see how it was created."
+    *   Implementation: Created this `README.md` file and populated it with the history of development requests and their corresponding implementations.
+
+7.  **README Update - Clarification and Logging** (Current request)
+    *   Request: "Also include my previous request, and this request, in the README.md log. And clarify, these are requests made to Aider/Gemini."
+    *   Implementation: Updated this `README.md` to clarify that requests were made to Aider/Gemini, and added entries for the README creation and this update.
