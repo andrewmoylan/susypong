@@ -25,6 +25,7 @@
         const paddleHeight = 10;
         let paddleX = (canvas.width - paddleWidth) / 2;
         const paddleY = canvas.height - paddleHeight - 10; // 10px from bottom
+        let paddleColor = 'blue';
 
         // Ball
         const heartSize = 10; // General size for hearts, used for drawing and collision
@@ -53,7 +54,7 @@
         }
 
         function drawPaddle() {
-            context.fillStyle = 'blue';
+            context.fillStyle = paddleColor;
             context.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
         }
 
@@ -205,6 +206,7 @@
                     
                     // Ensure ball is moving downwards and hits the top surface of the paddle
                     if (ball.speedY > 0) { 
+                        paddleColor = getRainbowColor(ball.hue, 1.0);
                         ball.speedY = -ball.speedY;
                         ball.y = paddleY - heartSize; // Place ball just above paddle to prevent sticking
 
