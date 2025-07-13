@@ -194,6 +194,7 @@
                 } else if (ball.y + heartSize > canvas.height) { // Bottom wall - now bounces
                     ball.speedY = -ball.speedY;
                     ball.y = canvas.height - heartSize; // Adjust position
+                    score--;
                     // No longer game over when hitting bottom wall
                 }
 
