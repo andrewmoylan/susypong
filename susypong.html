@@ -30,13 +30,14 @@
         // Ball
         const heartSize = 10; // General size for hearts, used for drawing and collision
         let balls = []; // Array to hold multiple ball objects
-        const maxBalls = 2;
+        let maxBalls = 2;
         const trailParticleLifetime = 60; // How many frames a trail particle lasts
         const maxTrailParticlesPerBall = 20; // Max trail particles for one ball
 
         // Game state
         // let gameOver = false; // Removed: game no longer ends
         let score = 0;
+        let scoreThreshold = 10;
 
         document.addEventListener('mousemove', movePaddle);
 
@@ -217,6 +218,11 @@
                         ball.speedX = originalSpeedX;
                         
                         score++;
+
+                        if (score >= scoreThreshold) {
+                            maxBalls++;
+                            scoreThreshold *= 10;
+                        }
 
                         // Duplicate ball if under maxBalls limit
                         if (balls.length < maxBalls) {
