@@ -1,5 +1,7 @@
 # Susy Pong - Development Log
 
+You can play the game at https://andrewmoylan.github.io/susypong/susypong.html.
+
 This file documents the iterative development of `susypong.html`, a simple Pong-like game, based on a series of requests made to Aider/Gemini.
 
 ## Feature Requests
