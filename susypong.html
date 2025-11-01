@@ -28,16 +28,14 @@
         let paddleColor = 'blue';
 
         // Ball
-        const heartSize = 10; // General size for hearts, used for drawing and collision
+        const ballRadius = 10; // Radius of the ball for drawing and collision
         let balls = []; // Array to hold multiple ball objects
-        let maxBalls = 2;
         const trailParticleLifetime = 60; // How many frames a trail particle lasts
         const maxTrailParticlesPerBall = 20; // Max trail particles for one ball
 
         // Game state
         // let gameOver = false; // Removed: game no longer ends
         let score = 0;
-        let scoreThreshold = 10;
 
         document.addEventListener('mousemove', movePaddle);
 
@@ -59,39 +57,12 @@
             context.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
         }
 
-        // Draw a heart shape centered at cx, cy with a given visualSize and fillStyle
-        function drawHeartShape(cx, cy, visualSize, fillStyle) {
-            // const cx = ball.x; // No longer from ball object directly
-            // const cy = ball.y; // No longer from ball object directly
-            const size = visualSize; // Use passed visualSize
-            
-            // Define heart dimensions based on 'size'
-            // Heart width will be 'size * 2', height 'size * 1.8'
-            // This means 'size' acts like a half-width for the heart.
-            const width = size * 2;
-            const height = size * 1.8;
-
-            context.fillStyle = fillStyle; // Use passed fillStyle
-
-            context.save(); // Save current context state (like fillStyle, transformations)
-            context.translate(cx, cy); // Move canvas origin to the heart's center point
-
+        function drawCircle(x, y, radius, fillStyle) {
             context.beginPath();
-            // Path is drawn relative to the new (cx,cy) origin.
-            // Start at the bottom tip of the heart.
-            context.moveTo(0, height / 2);
-            // Left side curves (Bezier curve to the start of the left lobe arc)
-            context.bezierCurveTo(-width / 20, height / 2.5, -width / 2, -height / 8, -width / 2, -height / 3.5);
-            // Left lobe (an arc)
-            context.arc(-width / 4, -height / 3.5, width / 4, Math.PI, 0, false);
-            // Right lobe (an arc)
-            context.arc(width / 4, -height / 3.5, width / 4, Math.PI, 0, false);
-            // Right side curves (Bezier curve from the end of the right lobe arc to the bottom tip)
-            context.bezierCurveTo(width / 2, -height / 8, width / 20, height / 2.5, 0, height / 2);
-            
+            context.arc(x, y, radius, 0, Math.PI * 2);
+            context.fillStyle = fillStyle;
             context.fill();
             context.closePath();
-            context.restore(); // Restore canvas context to its state before save()
         }
 
         function getRainbowColor(hue, alpha) {
@@ -176,69 +147,42 @@
                 ball.y += ball.speedY;
 
                 // Wall collision (left/right)
-                // The heart's drawn width is heartSize*2. Collision uses heartSize (half-width).
-                // The heart's drawn height is heartSize*1.8. Collision uses heartSize*0.9 (half-height).
-                // For simplicity in a "minimal" game, we'll use heartSize for both X and Y collision checks,
-                // approximating a circular or square bounding box.
-                if (ball.x + heartSize > canvas.width) { // Right wall
+                if (ball.x + ballRadius > canvas.width) { // Right wall
                     ball.speedX = -ball.speedX;
-                    ball.x = canvas.width - heartSize; // Adjust position to prevent sticking
-                } else if (ball.x - heartSize < 0) { // Left wall
+                    ball.x = canvas.width - ballRadius; // Adjust position to prevent sticking
+                } else if (ball.x - ballRadius < 0) { // Left wall
                     ball.speedX = -ball.speedX;
-                    ball.x = heartSize; // Adjust position
+                    ball.x = ballRadius; // Adjust position
                 }
 
                 // Wall collision (top/bottom)
-                if (ball.y - heartSize < 0) { // Top wall
+                if (ball.y - ballRadius < 0) { // Top wall
                     ball.speedY = -ball.speedY;
-                    ball.y = heartSize; // Adjust position
-                } else if (ball.y + heartSize > canvas.height) { // Bottom wall - now bounces
+                    ball.y = ballRadius; // Adjust position
+                } else if (ball.y + ballRadius > canvas.height) { // Bottom wall - now bounces
                     ball.speedY = -ball.speedY;
-                    ball.y = canvas.height - heartSize; // Adjust position
+                    ball.y = canvas.height - ballRadius; // Adjust position
                     score--;
                     // No longer game over when hitting bottom wall
                 }
 
                 // Paddle collision
-                // Using heartSize as effective radius for collision detection
-                if (ball.y + heartSize > paddleY && // Ball's bottom edge is below paddle's top edge
-                    ball.y - heartSize < paddleY + paddleHeight && // Ball's top edge is above paddle's bottom edge
-                    ball.x + heartSize > paddleX && // Ball's right edge is past paddle's left edge
-                    ball.x - heartSize < paddleX + paddleWidth) { // Ball's left edge is before paddle's right edge
+                if (ball.y + ballRadius > paddleY && // Ball's bottom edge is below paddle's top edge
+                    ball.y - ballRadius < paddleY + paddleHeight && // Ball's top edge is above paddle's bottom edge
+                    ball.x + ballRadius > paddleX && // Ball's right edge is past paddle's left edge
+                    ball.x - ballRadius < paddleX + paddleWidth) { // Ball's left edge is before paddle's right edge
                     
                     // Ensure ball is moving downwards and hits the top surface of the paddle
                     if (ball.speedY > 0) { 
                         paddleColor = getRainbowColor(ball.hue, 1.0);
                         ball.speedY = -ball.speedY;
-                        ball.y = paddleY - heartSize; // Place ball just above paddle to prevent sticking
+                        ball.y = paddleY - ballRadius; // Place ball just above paddle to prevent sticking
 
-                        // Original ball's horizontal speed adjustment
+                        // Adjust horizontal speed
                         let deltaX = ball.x - (paddleX + paddleWidth / 2);
-                        let originalSpeedX = deltaX * 0.2;
-                        ball.speedX = originalSpeedX;
+                        ball.speedX = deltaX * 0.2;
                         
                         score++;
-
-                        if (score >= scoreThreshold) {
-                            maxBalls++;
-                            scoreThreshold *= 10;
-                        }
-
-                        // Duplicate ball if under maxBalls limit
-                        if (balls.length < maxBalls) {
-                            const newBall = {
-                                x: ball.x,
-                                y: ball.y, // Start at the same position
-                                speedX: originalSpeedX * 0.8 - 0.5, // Slightly different angle/speed
-                                speedY: ball.speedY, // Same vertical speed (bounced)
-                                hue: (ball.hue + 30) % 360, // Offset hue for variety
-                                trail: []
-                            };
-                            balls.push(newBall);
-
-                            // Adjust original ball's speed slightly as well
-                            ball.speedX = originalSpeedX * 1.2 + 0.5;
-                        }
                     }
                 }
             }
@@ -253,22 +197,22 @@
 
             drawPaddle();
 
-            // Draw all trails then all balls (hearts)
+            // Draw all trails then all balls
             for (let i = 0; i < balls.length; i++) {
                 const ball = balls[i];
                 // Draw trail particles
                 for (const particle of ball.trail) {
                     const alpha = Math.max(0, particle.life / trailParticleLifetime); // Ensure alpha is not negative
                     const trailColor = getRainbowColor(particle.hue, alpha * 0.8); // Trail particles slightly more transparent
-                    drawHeartShape(particle.x, particle.y, heartSize * 0.6, trailColor); // Smaller hearts for trail
+                    drawCircle(particle.x, particle.y, ballRadius * 0.6, trailColor); // Smaller circles for trail
                 }
             }
             
-            // Draw main balls (hearts) on top of trails
+            // Draw main balls on top of trails
             for (let i = 0; i < balls.length; i++) {
                 const ball = balls[i];
-                const mainHeartColor = getRainbowColor(ball.hue, 1.0); // Main heart is fully opaque
-                drawHeartShape(ball.x, ball.y, heartSize, mainHeartColor);
+                const mainHeartColor = getRainbowColor(ball.hue, 1.0); // Main ball is fully opaque
+                drawCircle(ball.x, ball.y, ballRadius, mainHeartColor);
             }
 
             drawScore();
